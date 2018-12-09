@@ -62,6 +62,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //TODO: WILL implement later
     }
 
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        //when request code is equal to my defined code then go to -> execution
+        when(requestCode){
+            ACCESSLOCAITON->{
+
+                //two possibilites that person granted or not granted and we have asked only one permission so in any only one on location
+                //from grantResult we can know that granted or not
+                if(grantResults[0]==PackageManager.PERMISSION_GRANTED) //0 location is of our location and only have asked one permission, otherwise have to do with 1 index and so on
+                {
+                    GetUserLocation()
+                }
+                else//if not granted
+                {
+                    Toast.makeText(this, "We can't access to your locaation", Toast.LENGTH_LONG)
+                }
+            }
+        }
+
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
