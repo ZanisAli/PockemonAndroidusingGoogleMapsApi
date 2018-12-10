@@ -1,6 +1,10 @@
 package startup.softflix.com.pockemonandroid
 
+import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -60,6 +64,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     {
         Toast.makeText(this,"User location access on ", Toast.LENGTH_SHORT).show()
         //TODO: WILL implement later
+
+        var myLocation= MylocationListener() //making object of class that defined below
+
+        var locationManager= getSystemService(Context.LOCATION_SERVICE) as LocationManager //system has many services like calender, location , (as LocationManger will make type of var locationmanager as LocationManager as we don't know the type)
+        //with below line getting service every 3 millisecond and 3 meter(f)
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,3,3f, myLocation)
+
+        //starting thread , class defined belwo
+        var mythread= myThread()
+        mythread.start()
     }
 
 
@@ -100,11 +114,76 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap = googleMap
 
         // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Me")
-                .snippet("Here is my location")
-                .icon(BitmapDescriptorFactory
-                 .fromResource(R.drawable.mario)))//using mario as icon of location
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney,14f))
+
+    }
+
+
+    var location:Location?=null //to be accessible by all classes
+    //getting user location, locationlistener is an interface
+    inner class MylocationListener:LocationListener {
+
+        constructor()
+        {
+            location= Location("Start")
+            location!!.latitude=0.0
+            location!!.longitude=0.0
+        }
+
+        //this method is called everytime user location is changed
+
+        override fun onLocationChanged(p0: Location?) {
+            //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            location=p0 //everytime location is updated, it will be sent to location(this)
+        }
+
+        //this method whenever status changed means whenever gps changed to on/off
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        //called when gps changed to off
+        override fun onProviderEnabled(provider: String?) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+
+        //called when gps changed to on/enabled
+        override fun onProviderDisabled(provider: String?) {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
+    }
+
+    //class for passing location that we got from above class to the Ui
+
+    inner class myThread:Thread{
+        //thread need initialization
+        constructor():super()
+        {
+
+        }
+
+        override fun run() {
+            //get the location and show it to the map
+            while(true)
+            {
+                try {
+                    //always maps should be clean before running
+                    mMap!!.clear()
+                    //important, thread can't interact with UI , so need to use UI thread
+                    runOnUiThread {
+                        val sydney = LatLng(location!!.latitude, location!!.longitude)
+                        mMap.addMarker(MarkerOptions().position(sydney).title("Me")
+                                .snippet("Here is my location")
+                                .icon(BitmapDescriptorFactory
+                                        .fromResource(R.drawable.mario)))//using mario as icon of location
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney,14f))
+
+                        Thread.sleep(1000)
+                    }
+
+
+                }
+                catch (ex:Exception){}
+            }
+        }
     }
 }
