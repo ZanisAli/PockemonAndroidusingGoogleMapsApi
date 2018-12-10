@@ -1,5 +1,6 @@
 package startup.softflix.com.pockemonandroid
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -58,8 +59,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         //else
         GetUserLocation()
+        LoadPockemon()
     }
 
+    @SuppressLint("MissingPermission")
     fun GetUserLocation()
     {
         Toast.makeText(this,"User location access on ", Toast.LENGTH_SHORT).show()
@@ -154,11 +157,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     //class for passing location that we got from above class to the Ui
 
+    var oldLocation:Location?=null
     inner class myThread:Thread{
         //thread need initialization
         constructor():super()
         {
-
+            oldLocation= Location("Start")
+            oldLocation!!.latitude=0.0
+            oldLocation!!.longitude=0.0
         }
 
         override fun run() {
@@ -166,16 +172,52 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             while(true)
             {
                 try {
+                    //if location is not changed means they are on same location
+                    if(oldLocation!!.distanceTo(location)==0f)
+                    {
+                        continue
+                    }
+
+                    //else
+
+                    oldLocation=location
                     //always maps should be clean before running
                     mMap!!.clear()
                     //important, thread can't interact with UI , so need to use UI thread
                     runOnUiThread {
+                        //show me
                         val sydney = LatLng(location!!.latitude, location!!.longitude)
                         mMap.addMarker(MarkerOptions().position(sydney).title("Me")
                                 .snippet("Here is my location")
                                 .icon(BitmapDescriptorFactory
                                         .fromResource(R.drawable.mario)))//using mario as icon of location
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney,14f))
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney,2f))
+
+                        //show pockemons
+
+                        for( i in 0..listPockemons.size-1)
+                        {
+                            var newPockemon= listPockemons[i]
+                            //if pockemon is not catched then show it on maps
+                            if(newPockemon.IsCatch==false)
+                            {
+                                val pockemanLoc = LatLng(newPockemon.location!!.latitude, newPockemon.location!!.longitude)
+                                mMap.addMarker(MarkerOptions().position(pockemanLoc).title(newPockemon.name!!)
+                                        .snippet(newPockemon.des!!+"Power"+ newPockemon.power!!)
+                                        .icon(BitmapDescriptorFactory
+                                                .fromResource(newPockemon.image!!)))//using mario as icon of location
+
+                                //check mylocation and pokemon location for catchin
+                                if(location!!.distanceTo(newPockemon.location)<2)
+                                    newPockemon.IsCatch=true
+                                listPockemons[i]=newPockemon
+                                playerPower+=newPockemon.power!!
+                                Toast.makeText(applicationContext,
+                                        "You catch new pockemon your new pwoer is " + playerPower,
+                                        Toast.LENGTH_LONG).show()
+                            }
+
+                        }
 
                         Thread.sleep(1000)
                     }
@@ -185,5 +227,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 catch (ex:Exception){}
             }
         }
+    }
+
+    var playerPower=0.0
+    //list of pockemons
+    var listPockemons= ArrayList<Pockemon>()
+
+    fun LoadPockemon()
+    {
+        listPockemons.add(Pockemon(R.drawable.charmander,
+                "Charmander", "Charmander living in japan", 55.0, 37.7789994893035, -122.401846647263))
+        listPockemons.add(Pockemon(R.drawable.bulbasaur,
+                "Bulbasaur", "Bulbasaur living in usa", 90.5, 37.7949568502667, -122.410494089127))
+        listPockemons.add(Pockemon(R.drawable.squirtle,
+                "Squirtle", "Squirtle living in iraq", 33.5, 37.7816621152613, -122.41225361824))
     }
 }
